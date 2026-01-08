@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", () => {
+
 let gameSpeed = 1;
 const BASE_PUSH = 1;
 const BASE_ENDURANCE = 100;
@@ -415,3 +417,4 @@ setInterval(godsSpeak, 3000);
 loadGame();
 updateUI();
 log("The hill awaits your effort.");
+});
