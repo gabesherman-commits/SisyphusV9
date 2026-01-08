@@ -6,82 +6,48 @@
   <title>The Punishment of Sisyphus</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
   <h1>The Punishment of Sisyphus</h1>
-  <div id="goal-text">
-    The gods decree: the summit lies at 500.  
-    You will never reach it.
+  <div id="goal-text">The summit lies at 500. It is unreachable.</div>
+
+  <div id="hill-container" style="position: relative; bottom: 90%; width: 600px; height: 50px; border: 2px solid #555; margin: 0 auto;">
+    <img id="sisyphus-img" src="assets/Sisyphus.png" style="position: absolute; bottom: 0; left: 0; height: 50px;">
   </div>
 
-  <!-- Hill / Visual Representation -->
-  <div id="hill-wrapper">
-    <div id="hill-container">
-      <img
-        id="sisyphus-img"
-        src="assets/Sisyphus.png"
-        alt="Sisyphus pushing the boulder"
-      >
-    </div>
-  </div>
-
-  <!-- Stats -->
   <div id="stats">
-    <p>Cycle: <span id="run">1</span></p>
-    <p>Ascent Height: <span id="height">0</span></p>
-    <p>Endurance: <span id="endurance">100</span></p>
-    <p>Burdened Will (Level): <span id="level">1</span></p>
-    <p>Experience: <span id="xp-text">0 / 50</span></p>
-    <p>Effort Speed: <span id="game-speed">1.00</span></p>
-    <p>Grip of the Boulder: <span id="grip-strength">0%</span></p>
-    <p>Sandals of the Dead: <span id="sandals-chance">0%</span></p>
+    <p>Ascent: <span id="run">1</span></p>
+    <p>Progress up the Hill: <span id="height">0</span></p>
+    <p>Will Remaining: <span id="endurance">100</span></p>
+    <p>Defiance: <span id="level">1</span></p>
+    <p>Cunning: <span id="xp-text">0 / 50</span></p>
+    <p>Fury of the Gods: <span id="game-speed">1.00</span></p>
+    <p>Resolve Against Mockery: <span id="grip-strength">0%</span></p>
+    <p>Trickery Employed: <span id="sandals-chance">0%</span></p>
   </div>
 
-  <!-- Controls -->
   <div id="controls">
-    <button id="pushBtn">Push the Boulder</button>
-    <button id="resetBtn">Accept the Fall</button>
-    <button id="resetAllBtn">Erase All Memory</button>
-
-    <button id="sacrificeSpeedBtn">
-      Sacrifice 2 Levels → Greater Effort
-    </button>
-
-    <button id="sacrificeGripBtn">
-      Sacrifice 1 Level → Stronger Grip
-    </button>
-
-    <button id="upgradeSandalsBtn">
-      Improve Sandals of the Dead
-    </button>
+    <button id="pushBtn">Strain Against the Stone</button>
+    <button id="resetBtn">Begin the Ascent Again</button>
+    <button id="resetAllBtn">Appeal to the Gods</button>
+    <button id="sacrificeSpeedBtn">Provoke the Gods (−2 Defiance → Greater Fury)</button>
+    <button id="sacrificeGripBtn">Harden Resolve (−1 Defiance → Tighten your grip)</button>
+    <button id="upgradeSandalsBtn">Employ Trickery (−1 Defiance → More effective will)</button>
   </div>
 
-  <!-- Audio -->
   <div id="audio-controls">
-    <button id="muteBtn">Mute the Gods</button>
-    <label for="volumeSlider">Chorus Volume:</label>
-    <input
-      id="volumeSlider"
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value="1"
-    >
+    <button id="muteBtn">Silence the Stone</button>
+    <label for="volumeSlider">Echo of the Hill:</label>
+    <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1">
   </div>
 
-  <!-- Gods -->
   <div id="gods-comment"></div>
 
-  <!-- Log -->
   <div id="log-container">
-    <h2>Chronicle of Futility</h2>
+    <h2>Record of the Punishment</h2>
     <div id="log"></div>
   </div>
 
-  <!-- IMPORTANT: defer is REQUIRED for GitHub Pages -->
-  <script src="gameV9.js" defer></script>
-
+  <script src="gameV9.js"></script>
 </body>
 </html>
