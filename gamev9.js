@@ -39,8 +39,8 @@ let state = {
   fallTime: 0,
   fakeEscapeTriggered: false,
   forcedFall: false,
-  pendingReset: false
-  recovering: false,
+  pendingReset: false,
+  recovering: false
 };
 
 // DOM elements
