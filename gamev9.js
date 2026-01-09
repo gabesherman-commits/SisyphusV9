@@ -55,7 +55,6 @@ const gripStrengthEl = document.getElementById("grip-strength");
 const sandalsChanceEl = document.getElementById("sandals-chance");
 
 const pushBtn = document.getElementById("pushBtn");
-const resetBtn = document.getElementById("resetBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
 const sacrificeSpeedBtn = document.getElementById("sacrificeSpeedBtn");
 const sacrificeGripBtn = document.getElementById("sacrificeGripBtn");
@@ -383,7 +382,6 @@ pushBtn.addEventListener("touchstart", e=>{ e.preventDefault(); pushBoulder(); p
 pushBtn.addEventListener("touchend", e=>{ e.preventDefault(); clearInterval(pushInterval); });
 
 // Other buttons
-resetBtn.addEventListener("click", resetRun);
 resetAllBtn.addEventListener("click", resetAllProgress);
 sacrificeSpeedBtn.addEventListener("click",()=>{
   if(level>=3){ level-=2; state.maxEndurance=BASE_ENDURANCE+level*ENDURANCE_PER_LEVEL; gameSpeed+=0.25; log("Sacrificed 2 levels: +0.25 Speed"); updateUI(); } else log("Need at least 3 levels.");
