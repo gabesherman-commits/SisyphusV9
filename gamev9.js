@@ -267,11 +267,11 @@ if(
   triggerFakeEscape();
 }
 
-  if(state.endurance <= 0){
-    endRun("You collapse from exhaustion.");
-    return;
-  }
-
+if (state.endurance <= 0) {
+  state.endurance = 0;
+  state.alive = false; // prevents pushing
+  log("Your strength fails. The boulder begins its descent.");
+}
   updateUI();
   updateTone();
 }
@@ -291,26 +291,31 @@ function triggerFakeEscape(){
   stopAudio();
 }
 
+// --- apply gravity ---
 function applyGravity(){
-  if(!state.alive || state.height <= 0) return;
+  if(state.height <= 0) return;
 
   state.fallTime += 0.2;
-  let dynamicGravity = (BASE_GRAVITY + state.height * GRAVITY_HEIGHT_SCALE) * (1 + state.fallTime * 0.05);
+
+  const dynamicGravity =
+    (BASE_GRAVITY + state.height * GRAVITY_HEIGHT_SCALE) *
+    (1 + state.fallTime * 0.05);
+
   state.height -= dynamicGravity;
 
-  if(state.height <= 0 && state.hasLeftBottom){
-  state.height = 0;
+  if(state.height <= 0){
+    state.height = 0;
+    state.fallTime = 0;
 
-  if(!state.pendingReset){
-    state.pendingReset = true;
-    state.alive = false;
-    log("The boulder reaches the bottom.");
-    log("You are condemned to begin again.");
-
-    setTimeout(()=>{
-      resetRun();
-    }, 1200);
+    if(state.hasLeftBottom){
+      state.hasLeftBottom = false;
+      log("The boulder crashes back to the bottom.");
+      beginRecovery();
+    }
   }
+
+  updateUI();
+  updateTone();
 }
 
   updateUI();
@@ -348,26 +353,34 @@ function endRun(reason){
   saveGame();
 }
 
-function resetRun(){
-  runCount++;
-  state.height = 0;
-  state.endurance = state.maxEndurance;
-  state.alive = true;
-  pushBtn.disabled = false;
-  state.hasLeftBottom = false;
-  state.fallTime = 0;
-  state.fakeEscapeTriggered = false;
-  state.forcedFall = false;
-  state.pendingReset = false;
-  state.fakeEscapeTriggered = false; 
 
-  stopAudio();
-  state.audioStarted = false;
-  saveGame();
-  log("--- New ascent begins ---");
-  updateUI();
 
+// --- Stamina recovery at bottom ---
+function beginRecovery(){
+  if(state.recovering) return;
+  state.recovering = true;
+  state.alive = false;
+
+  log("You lie broken at the foot of the hill.");
+  log("Your strength slowly returns.");
+
+  const regenInterval = setInterval(() => {
+    state.endurance += state.maxEndurance * 0.05;
+
+    if(state.endurance >= state.maxEndurance){
+      state.endurance = state.maxEndurance;
+      state.alive = true;
+      state.recovering = false;
+      runCount++;
+
+      log("--- The gods demand another ascent ---");
+      clearInterval(regenInterval);
+    }
+
+    updateUI();
+  }, 500);
 }
+
 
 // ---- Hold-to-push Buttons ----
 let pushInterval = null;
@@ -406,6 +419,8 @@ document.addEventListener("keydown",e=>{
     } else log("Invalid cheat.");
   }
 });
+
+
 
 // ---- Intervals ----
 setInterval(applyGravity, 200);
