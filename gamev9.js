@@ -40,6 +40,7 @@ let state = {
   fakeEscapeTriggered: false,
   forcedFall: false,
   pendingReset: false
+  recovering: false,
 };
 
 // DOM elements
@@ -269,7 +270,7 @@ if(
 
 if (state.endurance <= 0) {
   state.endurance = 0;
-  state.alive = false; // prevents pushing
+  pushBtn.disabled = true;
   log("Your strength fails. The boulder begins its descent.");
 }
   updateUI();
@@ -317,9 +318,6 @@ function applyGravity(){
   updateUI();
   updateTone();
 }
-
-  updateUI();
-  updateTone();
 
 
 function checkSlip(){
@@ -372,6 +370,7 @@ function beginRecovery(){
       state.alive = true;
       state.recovering = false;
       runCount++;
+      pushBtn.disabled = false;
 
       log("--- The gods demand another ascent ---");
       clearInterval(regenInterval);
