@@ -55,7 +55,7 @@ const gameSpeedEl = document.getElementById("game-speed");
 const gripStrengthEl = document.getElementById("grip-strength");
 const sandalsChanceEl = document.getElementById("sandals-chance");
 
-const pushBtn = document.getElementById("pushBtn");
+const Btn = document.getElementById("Btn");
 const resetAllBtn = document.getElementById("resetAllBtn");
 const sacrificeSpeedBtn = document.getElementById("sacrificeSpeedBtn");
 const sacrificeGripBtn = document.getElementById("sacrificeGripBtn");
@@ -185,7 +185,7 @@ function resetAllProgress(){
   state.pendingReset = false;
 
   stopAudio();
-  pushBtn.disabled = false;
+  Btn.disabled = false;
 
   log("--- All memory erased ---");
   log("You are returned to the hill, unknown and unchanged.");
@@ -216,12 +216,12 @@ const godsLines = [
   "You mistake motion for progress.",
   "The boulder feels heavier today, doesn’t it?",
   "Your struggle is amusing.",
-  "Even a snail could push faster.",
+  "Even a snail could  faster.",
   "Even Tantalus would feel pity for your effort.",
   "Your sweat smells like Hades’ stagnant river.",
   "Mortals were not meant to lift eternal burdens… yet here you are, failing.",
   "The Furies laugh at your feeble strength.",
-  "Your push is slower than Hermes on a lazy day.",
+  "Your  is slower than Hermes on a lazy day.",
   "Zeus is considering giving you wings… just to make you crash faster.",
   "Your endurance is weaker than a lotus-eater’s resolve.",
   "The hill whispers your name with contempt.",
@@ -236,8 +236,8 @@ const godsLines = [
 function godsSpeak(){ if(!state.alive) return; if(Math.random()<0.3) godsEl.textContent=godsLines[Math.floor(Math.random()*godsLines.length)]; }
 
 // ---- Mechanics ----
-function pushBoulder(){
-  if(state.forcedFall) return;
+function Boulder(){
+  if(state.forcedFall = true) return;
   if(!state.alive) return;
 
   startAudioOnce();
