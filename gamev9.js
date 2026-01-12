@@ -124,32 +124,6 @@ function updateUI() {
   updateSisyphus();
 }
 
-
-//// ---- Cheat Code ----
-document.addEventListener("keydown", (e) => {
-  if (e.key.toUpperCase() !== "C") return;
-
-  const code = prompt("Enter cheat code:");
-  if (!code) return;
-
-  if (code === "HADESRULE") {
-    level = 9999;
-    state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
-    state.endurance = state.maxEndurance;
-    gameSpeed = 5;
-
-    state.alive = true;
-    state.recovering = false;
-    pushBtn.disabled = false;
-
-    log("Cheat activated: The gods tremble.");
-    log("Level 9999. Endurance restored. Time accelerates.");
-
-    updateUI();
-  } else {
-    log("The gods scoff at your false incantation.");
-  }
-});
   
 //// ---------------- PUSH ----------------
 function pushBoulder() {
@@ -205,6 +179,35 @@ pushBtn.addEventListener("touchstart", e => {
 });
 
 pushBtn.addEventListener("touchend", () => clearInterval(pushInterval));
+
+
+
+
+  /// -------cheat code--------
+  document.addEventListener("keydown", (e) => {
+  if (e.repeat) return; // prevent spam
+  if (e.key.toLowerCase() !== "c") return;
+
+  const code = prompt("Enter cheat code:");
+  if (!code) return;
+
+  if (code === "HADESRULE") {
+    level = 9999;
+    state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
+    state.endurance = state.maxEndurance;
+    gameSpeed = 5;
+
+    state.alive = true;
+    state.recovering = false;
+
+    log("The gods recoil.");
+    log("Cheat accepted: HADESRULE");
+
+    updateUI();
+  } else {
+    log("The gods laugh at your failed incantation.");
+  }
+});
 
 //// ---------------- GRAVITY ----------------
 function applyGravity() {
