@@ -30,11 +30,13 @@ const BASE_GRAVITY = 0.8;
 const GRAVITY_HEIGHT_SCALE = 0.002;
 const SLIP_CHANCE = 0.05;
 const XP_PER_HEIGHT = 0.5;
-const XP_LEVEL_BASE = 50;
+const XP_LEVEL_BASE = 25;
 const XP_LEVEL_SCALE = 1.3;
 const MAX_HEIGHT = 500;
 const FAKE_ESCAPE_HEIGHT = 480;
 const SAVE_KEY = "sisyphus_save_v1";
+const DIVINE_PUNISHMENT_CHANCE = 0.002; // 0.2% chance per push
+const RANDOM_EVENT_CHANCE = 0.015; // 1.5% chance per push for a random event
 
 // Audio
 const BASE_FREQUENCY = 200;
@@ -61,7 +63,14 @@ const state = {
   fallTime: 0,
   forcedFall: false,
   fakeEscapeTriggered: false,
-  audioStarted: false
+  audioStarted: false,
+  // Random event states
+  divineBlessingPushes: 0,        // Pushes remaining with no endurance drain
+  curseMomentumPushes: 0,         // Auto-pushes remaining
+  slipperyBoulderPushes: 0,       // Pushes with 3x drain remaining
+  gracePeriodActive: false,       // Recovery boost active
+  strengthSurgePushes: 0,         // Pushes with 2x height remaining
+  strengthSurgeMultiplier: 1      // Current push multiplier
 };
 
 //// ---------------- DOM ----------------
@@ -87,7 +96,7 @@ const sisyphusImg = document.getElementById("sisyphus-img");
 
 //// ---------------- BUTTON HANDLERS ----------------
 resetAllBtn.addEventListener("click", () => {
-  if (confirm("Reset all progress?")) {
+  if (confirm("Reset all progress? Beg forgiveness from the gods?")) {
     gameSpeed = 1;
     runCount = 1;
     level = 1;
@@ -100,7 +109,13 @@ resetAllBtn.addEventListener("click", () => {
     state.recovering = false;
     state.gripStrength = 0;
     state.sandalsChance = 0;
-    log("The gods smile upon your suffering. All progress erased.");
+    const resetMessages = [
+      "The gods smile upon your submission. All is forgotten. All must be repeated.",
+      "You stand at the base once more. Older. Wearier. Wiser? Perhaps not.",
+      "The cycle resets. Sisyphus begins again. Will this time be different?"
+    ];
+    const msg = resetMessages[Math.floor(Math.random() * resetMessages.length)];
+    log(msg);
     updateUI();
   }
 });
@@ -111,7 +126,13 @@ sacrificeSpeedBtn.addEventListener("click", () => {
     gameSpeed *= 1.5;
     state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
     state.endurance = state.maxEndurance;
-    log("You provoked the gods. The world spins faster.");
+    const provocationMessages = [
+      "You provoked the gods. The world spins faster. Foolish mortal.",
+      "The gods laugh at your challenge. Reality accelerates around you.",
+      "Time itself bends to their will. Everything moves faster now."
+    ];
+    const msg = provocationMessages[Math.floor(Math.random() * provocationMessages.length)];
+    log(msg);
     updateUI();
   } else {
     log("You are not high enough level to provoke the gods.");
@@ -124,7 +145,13 @@ sacrificeGripBtn.addEventListener("click", () => {
     state.gripStrength += 10;
     state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
     state.endurance = state.maxEndurance;
-    log("Your grip tightens. The stone will not slip.");
+    const gripMessages = [
+      "Your grip tightens. Calluses form. The stone will not slip.",
+      "You steel yourself. Your hands become iron. Failure is less likely.",
+      "Determination hardens into strength. You hold firm against fate."
+    ];
+    const msg = gripMessages[Math.floor(Math.random() * gripMessages.length)];
+    log(msg);
     updateUI();
   } else {
     log("You are not high enough level.");
@@ -137,7 +164,13 @@ upgradeSandalsBtn.addEventListener("click", () => {
     state.sandalsChance += 10;
     state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
     state.endurance = state.maxEndurance;
-    log("Your will becomes stronger. You will not stumble.");
+    const willMessages = [
+      "Your will becomes iron. The boulder cannot weaken you. Not yet.",
+      "You are trickery incarnate. The stone's weight no longer binds you.",
+      "By cunning and wit, you preserve yourself. The gods' tools grow dull."
+    ];
+    const msg = willMessages[Math.floor(Math.random() * willMessages.length)];
+    log(msg);
     updateUI();
   } else {
     log("You are not high enough level.");
@@ -350,18 +383,66 @@ function pushBoulder() {
 
   startAudio();
 
-  state.height += BASE_PUSH * gameSpeed;
+  // Apply strength surge multiplier
+  const pushPower = BASE_PUSH * gameSpeed * state.strengthSurgeMultiplier;
+  state.height += pushPower;
   state.height = Math.min(state.height, MAX_HEIGHT - 1);
 
-  if (Math.random() * 100 >= state.sandalsChance) {
-    state.endurance -= ENDURANCE_DRAIN * gameSpeed;
+  // Handle endurance drain
+  let drainAmount = ENDURANCE_DRAIN * gameSpeed;
+  
+  // Divine blessing: no drain
+  if (state.divineBlessingPushes > 0) {
+    drainAmount = 0;
+    state.divineBlessingPushes--;
+  }
+  // Slippery boulder: 3x drain
+  else if (state.slipperyBoulderPushes > 0) {
+    drainAmount *= 3;
+    state.slipperyBoulderPushes--;
+  }
+  // Normal case: endurance save chance
+  else if (Math.random() * 100 >= state.sandalsChance) {
+    state.endurance -= drainAmount;
+  } else {
+    // Saved by grip strength
+  }
+
+  // Decrease strength surge counter
+  if (state.strengthSurgePushes > 0) {
+    state.strengthSurgePushes--;
+  } else {
+    state.strengthSurgeMultiplier = 1;
   }
 
   state.hasLeftBottom = true;
   state.fallTime = 0;
 
+  // Check for divine punishment
+  if (Math.random() < DIVINE_PUNISHMENT_CHANCE && state.height > 0) {
+    state.height = 0;
+    log("The gods laugh at your hubris and cast you down!");
+    updateUI();
+    updateTone();
+    return;
+  }
+
+  // Check for random positive/negative event
+  if (Math.random() < RANDOM_EVENT_CHANCE) {
+    triggerRandomEvent();
+  }
+
   xp += XP_PER_HEIGHT;
   applyLevelUps();
+
+  // Milestone messages for narrative progression
+  if (state.height >= 100 && state.height < 101) {
+    log("100 feet. You are making progress. Or are the gods merely toying with you?");
+  } else if (state.height >= 250 && state.height < 251) {
+    log("250 feet. Halfway there. The air grows thin. Your resolve grows thinner.");
+  } else if (state.height >= 400 && state.height < 401) {
+    log("400 feet. So close. So very close. Can you taste freedom?");
+  }
 
   if (state.height >= FAKE_ESCAPE_HEIGHT && !state.fakeEscapeTriggered) {
     triggerFakeEscape();
@@ -458,6 +539,14 @@ function beginRecovery() {
   state.recovering = true;
   state.alive = false;
 
+  const recoveryMessages = [
+    "The gods demand another ascent.",
+    "The boulder awaits. Again.",
+    "Your strength returns. The cycle continues.",
+    "You gather yourself for another push.",
+    "Rest is fleeting. The hill calls."
+  ];
+
   const regen = setInterval(() => {
     // Regenerate faster if at the bottom
     const regenRate = (state.height === 0) ? 0.12 : 0.05;
@@ -469,7 +558,8 @@ function beginRecovery() {
       pushBtn.disabled = false;
       runCount++;
       clearInterval(regen);
-      log("The gods demand another ascent.");
+      const msg = recoveryMessages[Math.floor(Math.random() * recoveryMessages.length)];
+      log(msg);
     }
     updateUI();
   }, 500);
@@ -492,7 +582,121 @@ function triggerFakeEscape() {
   state.forcedFall = true;
   state.endurance = 0;
   stopAudio();
-  log("You almost believed.");
+  const escapeMessages = [
+    "You almost believed.",
+    "Freedom was never yours.",
+    "The summit recedes. It always does.",
+    "So close. Yet so far.",
+    "Hope is the cruelest punishment of all."
+  ];
+  const msg = escapeMessages[Math.floor(Math.random() * escapeMessages.length)];
+  log(msg);
+}
+
+//// ---------------- RANDOM EVENTS ----------------
+function triggerRandomEvent() {
+  const events = [
+    { name: "Divine Blessing", fn: triggerDivineBlessing, weight: 1 },
+    { name: "Curse of Momentum", fn: triggerCurseMomentum, weight: 1 },
+    { name: "Slippery Boulder", fn: triggerSlipperyBoulder, weight: 1 },
+    { name: "Grace Period", fn: triggerGracePeriod, weight: 1 },
+    { name: "Strength Surge", fn: triggerStrengthSurge, weight: 1 },
+    { name: "Boulder Malfunction", fn: triggerBoulderMalfunction, weight: 1 }
+  ];
+  
+  const randomEvent = events[Math.floor(Math.random() * events.length)];
+  randomEvent.fn();
+}
+
+function triggerDivineBlessing() {
+  state.divineBlessingPushes = 5;
+  const blessingMessages = [
+    "✨ The gods smile upon you! Your next 5 pushes drain no endurance!",
+    "✨ A moment of mercy. The boulder lightens for 5 pushes.",
+    "✨ Divine favor! The weight lifts from your shoulders—briefly."
+  ];
+  const msg = blessingMessages[Math.floor(Math.random() * blessingMessages.length)];
+  log(msg);
+}
+
+function triggerCurseMomentum() {
+  state.curseMomentumPushes = 3;
+  const curseMessages = [
+    "⚡ The boulder seizes control! 3 automated pushes ensue!",
+    "⚡ The gods mock your effort. The boulder moves itself.",
+    "⚡ A curse of momentum! The stone rolls of its own will."
+  ];
+  const msg = curseMessages[Math.floor(Math.random() * curseMessages.length)];
+  log(msg);
+  // Auto-push after a short delay
+  setTimeout(() => autoPushBoulder(), 200);
+}
+
+function autoPushBoulder() {
+  if (state.curseMomentumPushes > 0 && state.alive) {
+    state.height += BASE_PUSH * gameSpeed * 0.5; // Half strength auto-push
+    state.height = Math.min(state.height, MAX_HEIGHT - 1);
+    state.endurance -= ENDURANCE_DRAIN * gameSpeed * 0.5; // Half drain
+    state.curseMomentumPushes--;
+    
+    if (state.curseMomentumPushes > 0) {
+      setTimeout(() => autoPushBoulder(), 200);
+    }
+    
+    updateUI();
+    updateTone();
+  }
+}
+
+function triggerSlipperyBoulder() {
+  state.slipperyBoulderPushes = 3;
+  const slipperyMessages = [
+    "🌊 The boulder becomes treacherous! The next 3 pushes drain 3x endurance!",
+    "🌊 Cursed moisture! Your grip weakens. 3x drain for 3 pushes.",
+    "🌊 The boulder is slick with divine oil. Push harder! (3x cost)"
+  ];
+  const msg = slipperyMessages[Math.floor(Math.random() * slipperyMessages.length)];
+  log(msg);
+}
+
+function triggerGracePeriod() {
+  const recovered = Math.floor(state.maxEndurance * 0.5);
+  state.endurance = Math.min(state.endurance + recovered, state.maxEndurance);
+  const graceMessages = [
+    "🙏 Grace descends. The gods restore your strength (" + state.endurance + "/" + state.maxEndurance + ")",
+    "🙏 A brief respite. Strength returns to weary limbs (" + state.endurance + "/" + state.maxEndurance + ")",
+    "🙏 The gods take pity. For now. (" + state.endurance + "/" + state.maxEndurance + ")"
+  ];
+  const msg = graceMessages[Math.floor(Math.random() * graceMessages.length)];
+  log(msg);
+  updateUI();
+}
+
+function triggerStrengthSurge() {
+  state.strengthSurgePushes = 5;
+  state.strengthSurgeMultiplier = 2;
+  const surgeMessages = [
+    "💪 A surge of primal strength! Your next 5 pushes are 2x stronger!",
+    "💪 Godly vigor flows through you. 5 enhanced pushes await.",
+    "💪 Herculean power! 5 pushes worth double the effort."
+  ];
+  const msg = surgeMessages[Math.floor(Math.random() * surgeMessages.length)];
+  log(msg);
+}
+
+function triggerBoulderMalfunction() {
+  const heightLoss = Math.floor(state.height * (0.1 + Math.random() * 0.2));
+  state.height -= heightLoss;
+  state.height = Math.max(state.height, 0);
+  const malfunctionMessages = [
+    "💥 The boulder crumbles! Lost " + heightLoss + "ft of progress!",
+    "💥 Catastrophic failure! " + heightLoss + "ft vanishes in an instant!",
+    "💥 The gods mock your labor. " + heightLoss + "ft erased. Start again."
+  ];
+  const msg = malfunctionMessages[Math.floor(Math.random() * malfunctionMessages.length)];
+  log(msg);
+  updateUI();
+  updateTone();
 }
 
 //// ---------------- INTERVALS ----------------
