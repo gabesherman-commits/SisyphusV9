@@ -57,7 +57,6 @@ const state = {
   maxEndurance: BASE_ENDURANCE,
   alive: true,
   recovering: false,
-  gripStrength: 0,
   sandalsChance: 0,
   hasLeftBottom: false,
   fallTime: 0,
@@ -80,7 +79,7 @@ const runEl = document.getElementById("run");
 const levelEl = document.getElementById("level");
 const xpTextEl = document.getElementById("xp-text");
 const gameSpeedEl = document.getElementById("game-speed");
-const gripStrengthEl = document.getElementById("grip-strength");
+// gripStrength removed
 const sandalsChanceEl = document.getElementById("sandals-chance");
 const godsEl = document.getElementById("gods-comment");
 const logEl = document.getElementById("log");
@@ -88,7 +87,7 @@ const logEl = document.getElementById("log");
 const pushBtn = document.getElementById("pushBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
 const sacrificeSpeedBtn = document.getElementById("sacrificeSpeedBtn");
-const sacrificeGripBtn = document.getElementById("sacrificeGripBtn");
+// sacrificeGripBtn removed
 const upgradeSandalsBtn = document.getElementById("upgradeSandalsBtn");
 
 const hillContainer = document.getElementById("hill-container");
@@ -107,7 +106,6 @@ resetAllBtn.addEventListener("click", () => {
     state.maxEndurance = BASE_ENDURANCE;
     state.alive = true;
     state.recovering = false;
-    state.gripStrength = 0;
     state.sandalsChance = 0;
     const resetMessages = [
       "The gods smile upon your submission. All is forgotten. All must be repeated.",
@@ -139,24 +137,7 @@ sacrificeSpeedBtn.addEventListener("click", () => {
   }
 });
 
-sacrificeGripBtn.addEventListener("click", () => {
-  if (level >= 1) {
-    level -= 1;
-    state.gripStrength += 10;
-    state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
-    state.endurance = state.maxEndurance;
-    const gripMessages = [
-      "Your grip tightens. Calluses form. The stone will not slip.",
-      "You steel yourself. Your hands become iron. Failure is less likely.",
-      "Determination hardens into strength. You hold firm against fate."
-    ];
-    const msg = gripMessages[Math.floor(Math.random() * gripMessages.length)];
-    log(msg);
-    updateUI();
-  } else {
-    log("You are not high enough level.");
-  }
-});
+// sacrificeGripBtn has been removed — grip strength is no longer an upgrade
 
 upgradeSandalsBtn.addEventListener("click", () => {
   if (level >= 1) {
@@ -371,7 +352,7 @@ function updateUI() {
   levelEl.textContent = level;
   xpTextEl.textContent = `${Math.floor(xp)} / ${xpToNextLevel()}`;
   gameSpeedEl.textContent = gameSpeed.toFixed(2);
-  gripStrengthEl.textContent = `${state.gripStrength}%`;
+  // gripStrength removed from UI
   sandalsChanceEl.textContent = `${state.sandalsChance}%`;
   updateSisyphus();
 }
@@ -401,11 +382,11 @@ function pushBoulder() {
     drainAmount *= 3;
     state.slipperyBoulderPushes--;
   }
-  // Normal case: endurance save chance
+  // Normal case: endurance save chance (sandals)
   else if (Math.random() * 100 >= state.sandalsChance) {
     state.endurance -= drainAmount;
   } else {
-    // Saved by grip strength
+    // Saved by sandals
   }
 
   // Decrease strength surge counter
