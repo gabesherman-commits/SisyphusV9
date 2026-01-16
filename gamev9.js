@@ -118,27 +118,6 @@ resetAllBtn.addEventListener("click", () => {
   }
 });
 
-sacrificeGripBtn.addEventListener("click", () => {
-  if (state.gripStrength >= 80) {
-    log("Your grip has reached its mortal limit. The gods permit no more.");
-  } else if (level >= 1) {
-    level -= 1;
-    state.gripStrength += 10;
-    state.maxEndurance = BASE_ENDURANCE + level * ENDURANCE_PER_LEVEL;
-    state.endurance = state.maxEndurance;
-    const gripMessages = [
-      "Your grip tightens. Calluses form. The stone will not slip.",
-      "You steel yourself. Your hands become iron. Failure is less likely.",
-      "Determination hardens into strength. You hold firm against fate."
-    ];
-    const msg = gripMessages[Math.floor(Math.random() * gripMessages.length)];
-    log(msg);
-    updateUI();
-  } else {
-    log("You are not high enough level.");
-  }
-});
-
 // sacrificeGripBtn has been removed — grip strength is no longer an upgrade
 
 upgradeSandalsBtn.addEventListener("click", () => {
