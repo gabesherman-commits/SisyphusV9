@@ -72,6 +72,56 @@ const state = {
   strengthSurgeMultiplier: 1      // Current push multiplier
 };
 
+//// ---------------- COSMETICS ----------------
+const COSMETICS = {
+  characters: [
+    { id: "sisyphus-classic", name: "Sisyphus", unlockCondition: () => true, image: "assets/Sisyphus.png" },
+    { id: "sisyphus-warrior", name: "Warrior", unlockCondition: () => level >= 5, image: "assets/Sisyphus-warrior.png" },
+    { id: "sisyphus-spectral", name: "Spectral Form", unlockCondition: () => personalBest >= 200, image: "assets/Sisyphus-spectral.png" },
+    { id: "sisyphus-titan", name: "Titan", unlockCondition: () => level >= 15, image: "assets/Sisyphus-titan.png" },
+    { id: "sisyphus-cursed", name: "Cursed", unlockCondition: () => personalBest >= 400, image: "assets/Sisyphus-cursed.png" },
+    { id: "sisyphus-coquette", name: "Coquette", unlockCondition: () => cosmetics.unlockedCharacters.includes("sisyphus-coquette"), image: "assets/Sisyphus-coquette.png" }
+  ]
+};
+
+let cosmetics = {
+  activeCharacter: "sisyphus-classic",
+  unlockedCharacters: ["sisyphus-classic"],
+  unlockedBoulders: ["boulder-stone"]
+};
+
+function loadCosmetics() {
+  const saved = localStorage.getItem("sisyphus_cosmetics");
+  if (saved) {
+    cosmetics = JSON.parse(saved);
+  }
+}
+
+function saveCosmetics() {
+  localStorage.setItem("sisyphus_cosmetics", JSON.stringify(cosmetics));
+}
+
+function updateUnlockedCosmetics() {
+  // Check character unlocks
+  COSMETICS.characters.forEach(char => {
+    if (char.unlockCondition() && !cosmetics.unlockedCharacters.includes(char.id)) {
+      cosmetics.unlockedCharacters.push(char.id);
+      log(`✨ Unlocked character: ${char.name}`);
+    }
+  });
+  
+
+  saveCosmetics();
+}
+
+function applyCosmetics() {
+  const character = COSMETICS.characters.find(c => c.id === cosmetics.activeCharacter);
+  
+  if (character) {
+    sisyphusImg.src = character.image;
+  }
+}
+
 //// ---------------- DOM ----------------
 const heightEl = document.getElementById("height");
 const enduranceEl = document.getElementById("endurance");
@@ -89,6 +139,7 @@ const resetAllBtn = document.getElementById("resetAllBtn");
 const sacrificeSpeedBtn = document.getElementById("sacrificeSpeedBtn");
 // sacrificeGripBtn removed
 const upgradeSandalsBtn = document.getElementById("upgradeSandalsBtn");
+const cosmeticsBtn = document.getElementById("cosmeticsBtn");
 
 const hillContainer = document.getElementById("hill-container");
 const sisyphusImg = document.getElementById("sisyphus-img");
@@ -118,6 +169,23 @@ resetAllBtn.addEventListener("click", () => {
   }
 });
 
+sacrificeSpeedBtn.addEventListener("click", () => {
+  if (level >= 2) {
+    level -= 2;
+    gameSpeed += 0.25;
+    const messages = [
+      "You have provoked the gods! They accelerate your eternal torment.",
+      "The gods mock your sacrifice. Time itself bends against you.",
+      "Your defiance amuses them. The pace of eternity quickens."
+    ];
+    const msg = messages[Math.floor(Math.random() * messages.length)];
+    log(msg);
+    updateUI();
+  } else {
+    log("You are not high enough level to provoke the gods.");
+  }
+});
+
 // sacrificeGripBtn has been removed — grip strength is no longer an upgrade
 
 upgradeSandalsBtn.addEventListener("click", () => {
@@ -140,6 +208,68 @@ upgradeSandalsBtn.addEventListener("click", () => {
     log("You are not high enough level.");
   }
 });
+
+//// ---------- COSMETICS UI ----------
+const cosmeticsModal = document.getElementById("cosmetics-modal");
+
+cosmeticsBtn.addEventListener("click", () => {
+  cosmeticsModal.classList.remove("hidden");
+  renderCosmeticsUI();
+});
+
+// Close modal when clicking outside the modal content
+cosmeticsModal.addEventListener("click", (e) => {
+  if (e.target === cosmeticsModal) {
+    cosmeticsModal.classList.add("hidden");
+  }
+});
+
+// Close modal with escape key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !cosmeticsModal.classList.contains("hidden")) {
+    cosmeticsModal.classList.add("hidden");
+  }
+});
+
+function renderCosmeticsUI() {
+  const charactersGrid = document.getElementById("characters-grid");
+  const bouldersGrid = document.getElementById("boulders-grid");
+  
+  charactersGrid.innerHTML = "";
+  if (bouldersGrid) {
+    bouldersGrid.parentElement.style.display = "none";
+  }
+  
+  // Render characters
+  COSMETICS.characters.forEach(char => {
+    const isUnlocked = cosmetics.unlockedCharacters.includes(char.id);
+    const isActive = cosmetics.activeCharacter === char.id;
+    
+    const div = document.createElement("div");
+    div.className = `cosmetic-item ${!isUnlocked ? "locked" : ""} ${isActive ? "active" : ""}`;
+    
+    const unlockMsg = isUnlocked 
+      ? (isActive ? "✓ Active" : "Unlocked") 
+      : "Locked";
+    
+    div.innerHTML = `
+      <div class="cosmetic-name">${char.name}</div>
+      <div class="cosmetic-status">${unlockMsg}</div>
+    `;
+    
+    if (isUnlocked) {
+      div.style.cursor = "pointer";
+      div.addEventListener("click", () => {
+        cosmetics.activeCharacter = char.id;
+        saveCosmetics();
+        applyCosmetics();
+        renderCosmeticsUI();
+      });
+    }
+    
+    charactersGrid.appendChild(div);
+  });
+}
 
 //// ---------------- USERNAME MODAL ----------------
 const usernameModal = document.getElementById("username-modal");
@@ -304,6 +434,8 @@ function setupLeaderboardListener() {
 
 //// ---------------- GAME INITIALIZATION ----------------
 function initializeGame() {
+  loadCosmetics();
+  applyCosmetics();
   setupLeaderboardListener();
   updateUI();
   log("The hill awaits.");
@@ -398,6 +530,7 @@ function pushBoulder() {
 
   xp += XP_PER_HEIGHT;
   applyLevelUps();
+  updateUnlockedCosmetics();
 
   // Milestone messages for narrative progression
   if (state.height >= 100 && state.height < 101) {
@@ -421,6 +554,7 @@ function pushBoulder() {
     if (state.height > personalBest) {
       personalBest = state.height;
       log("New personal record!");
+      updateUnlockedCosmetics();
       submitScore();
     }
   }
@@ -475,6 +609,17 @@ pushBtn.addEventListener("touchend", () => clearInterval(pushInterval));
     log("Cheat accepted: HADESRULE");
 
     updateUI();
+  } else if (code === "coquette") {
+    if (!cosmetics.unlockedCharacters.includes("sisyphus-coquette")) {
+      cosmetics.unlockedCharacters.push("sisyphus-coquette");
+    }
+    cosmetics.activeCharacter = "sisyphus-coquette";
+    saveCosmetics();
+    applyCosmetics();
+    log("✨ A mysterious beauty has appeared...");
+    if (!cosmeticsModal.classList.contains("hidden")) {
+      renderCosmeticsUI();
+    }
   } else {
     log("The gods laugh at your failed incantation.");
   }
