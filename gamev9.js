@@ -129,7 +129,7 @@ const runEl = document.getElementById("run");
 const levelEl = document.getElementById("level");
 const xpTextEl = document.getElementById("xp-text");
 const gameSpeedEl = document.getElementById("game-speed");
-// gripStrength removed
+
 const sandalsChanceEl = document.getElementById("sandals-chance");
 const godsEl = document.getElementById("gods-comment");
 const logEl = document.getElementById("log");
@@ -137,12 +137,25 @@ const logEl = document.getElementById("log");
 const pushBtn = document.getElementById("pushBtn");
 const resetAllBtn = document.getElementById("resetAllBtn");
 const sacrificeSpeedBtn = document.getElementById("sacrificeSpeedBtn");
-// sacrificeGripBtn removed
+
 const upgradeSandalsBtn = document.getElementById("upgradeSandalsBtn");
 const cosmeticsBtn = document.getElementById("cosmeticsBtn");
 
 const hillContainer = document.getElementById("hill-container");
 const sisyphusImg = document.getElementById("sisyphus-img");
+
+const personalBestMarker = document.createElement("div");
+personalBestMarker.id = "personal-best-marker";
+personalBestMarker.title = "Personal Best";
+hillContainer.appendChild(personalBestMarker);
+
+// Audio control elements
+const volumeSlider = document.getElementById("volumeSlider");
+if (volumeSlider) {
+  volumeSlider.addEventListener("input", (e) => {
+    gainNode.gain.value = parseFloat(e.target.value);
+  });
+}
 
 //// ---------------- BUTTON HANDLERS ----------------
 resetAllBtn.addEventListener("click", () => {
@@ -317,8 +330,82 @@ usernameInput.addEventListener("keypress", (e) => {
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let oscillator = null;
 const gainNode = audioCtx.createGain();
-gainNode.gain.value = 0.3;
+gainNode.gain.value = 0.5;
 gainNode.connect(audioCtx.destination);
+
+// Sound effects
+let soundEffectVolume = 0.7;
+
+async function loadSoundEffect(name, path) {
+  // Sounds are generated programmatically, so this is a no-op
+  console.log(`Sound '${name}' ready (programmatic)`);
+}
+
+function playSoundEffect(name) {
+  try {
+    // Ensure audio context is resumed
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    
+    if (name === "good") {
+      playGoodSound();
+    } else if (name === "bad") {
+      playBadSound();
+    }
+  } catch (error) {
+    console.error(`Error playing sound effect ${name}:`, error);
+  }
+}
+
+function playGoodSound() {
+  // Pleasant ascending tone: happy chime
+  const now = audioCtx.currentTime;
+  
+  // Create three oscillators for a chord-like effect
+  const frequencies = [523.25, 659.25, 783.99]; // C, E, G notes
+  
+  frequencies.forEach((freq, index) => {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    
+    // Stagger the notes slightly for a nice effect
+    gain.gain.setValueAtTime(soundEffectVolume * 0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3 - index * 0.05);
+    
+    osc.connect(gain);
+    gain.connect(gainNode);
+    
+    osc.start(now + index * 0.05);
+    osc.stop(now + 0.3);
+  });
+}
+
+function playBadSound() {
+  // Unpleasant descending tone: error buzz
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  
+  osc.type = "sawtooth";  // Harsh sound
+  
+  // Quick descending pitch
+  osc.frequency.setValueAtTime(400, now);
+  osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+  
+  // Quick fade out
+  gain.gain.setValueAtTime(soundEffectVolume * 0.4, now);
+  gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+  
+  osc.connect(gain);
+  gain.connect(gainNode);
+  
+  osc.start(now);
+  osc.stop(now + 0.2);
+}
 
 function startAudio() {
   if (state.audioStarted) return;
@@ -435,6 +522,8 @@ function setupLeaderboardListener() {
 //// ---------------- GAME INITIALIZATION ----------------
 function initializeGame() {
   loadCosmetics();
+  loadSoundEffect("good", "assets/ahh.ogg");
+  loadSoundEffect("bad", "assets/explode.ogg");
   applyCosmetics();
   setupLeaderboardListener();
   updateUI();
@@ -458,6 +547,13 @@ function xpToNextLevel() {
 function updateSisyphus() {
   const maxX = hillContainer.clientWidth - sisyphusImg.clientWidth;
   sisyphusImg.style.left = `${(state.height / MAX_HEIGHT) * maxX}px`;
+
+  // Update personal best marker (vertical line at personal best distance)
+  const leftPos = (personalBest / MAX_HEIGHT) * maxX;
+  const frontPos = leftPos + sisyphusImg.clientWidth; // use the front of the hitbox
+  const markerX = Math.max(0, Math.min(hillContainer.clientWidth, frontPos));
+  personalBestMarker.style.left = `${markerX}px`;
+  personalBestMarker.style.display = personalBest > 0 ? "block" : "none";
 }
 
 function updateUI() {
@@ -719,6 +815,7 @@ function triggerRandomEvent() {
 
 function triggerDivineBlessing() {
   state.divineBlessingPushes = 5;
+  playSoundEffect("good");
   const blessingMessages = [
     "✨ The gods smile upon you! Your next 5 pushes drain no endurance!",
     "✨ A moment of mercy. The boulder lightens for 5 pushes.",
@@ -730,6 +827,7 @@ function triggerDivineBlessing() {
 
 function triggerCurseMomentum() {
   state.curseMomentumPushes = 3;
+  playSoundEffect("bad");
   const curseMessages = [
     "⚡ The boulder seizes control! 3 automated pushes ensue!",
     "⚡ The gods mock your effort. The boulder moves itself.",
@@ -759,6 +857,7 @@ function autoPushBoulder() {
 
 function triggerSlipperyBoulder() {
   state.slipperyBoulderPushes = 3;
+  playSoundEffect("bad");
   const slipperyMessages = [
     "🌊 The boulder becomes treacherous! The next 3 pushes drain 3x endurance!",
     "🌊 Cursed moisture! Your grip weakens. 3x drain for 3 pushes.",
@@ -771,6 +870,7 @@ function triggerSlipperyBoulder() {
 function triggerGracePeriod() {
   const recovered = Math.floor(state.maxEndurance * 0.5);
   state.endurance = Math.min(state.endurance + recovered, state.maxEndurance);
+  playSoundEffect("good");
   const graceMessages = [
     "🙏 Grace descends. The gods restore your strength (" + state.endurance + "/" + state.maxEndurance + ")",
     "🙏 A brief respite. Strength returns to weary limbs (" + state.endurance + "/" + state.maxEndurance + ")",
@@ -784,6 +884,7 @@ function triggerGracePeriod() {
 function triggerStrengthSurge() {
   state.strengthSurgePushes = 5;
   state.strengthSurgeMultiplier = 2;
+  playSoundEffect("good");
   const surgeMessages = [
     "💪 A surge of primal strength! Your next 5 pushes are 2x stronger!",
     "💪 Godly vigor flows through you. 5 enhanced pushes await.",
@@ -797,6 +898,7 @@ function triggerBoulderMalfunction() {
   const heightLoss = Math.floor(state.height * (0.1 + Math.random() * 0.2));
   state.height -= heightLoss;
   state.height = Math.max(state.height, 0);
+  playSoundEffect("bad");
   const malfunctionMessages = [
     "💥 The boulder crumbles! Lost " + heightLoss + "ft of progress!",
     "💥 Catastrophic failure! " + heightLoss + "ft vanishes in an instant!",
