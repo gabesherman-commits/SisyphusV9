@@ -19,6 +19,19 @@
     </div>
   </div>
 
+  <!-- Cosmetics Modal -->
+  <div id="cosmetics-modal" class="modal hidden">
+    <div class="modal-content cosmetics-modal-content">
+      <h2>Cosmetics</h2>
+      <button class="modal-close" onclick="document.getElementById('cosmetics-modal').classList.add('hidden')">&times;</button>
+      
+      <div class="cosmetics-section">
+        <h3>Characters</h3>
+        <div id="characters-grid" class="cosmetics-grid"></div>
+      </div>
+    </div>
+  </div>
+
   <h1>The Punishment of Sisyphus</h1>
   <div id="goal-text">The summit lies at 500 feet. First gets $10.</div>
   <div id="lore-intro">
@@ -46,6 +59,7 @@
     <button id="resetAllBtn">Appeal to the Gods</button>
     <button id="sacrificeSpeedBtn">Provoke the Gods (−2 Levels → Speed up game)</button>
     <button id="upgradeSandalsBtn">Employ Trickery (−1 Levels → More effective will)</button>
+    <button id="cosmeticsBtn">Cosmetics</button>
   </div>
 
   <div id="audio-controls">
